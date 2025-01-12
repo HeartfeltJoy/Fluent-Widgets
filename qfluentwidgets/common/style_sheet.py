@@ -9,6 +9,8 @@ from PySide6.QtCore import QFile, QObject, QEvent, QDynamicPropertyChangeEvent
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QWidget, QApplication, QStyleFactory
 
+<<<<<<< HEAD
+from .file import QFluentFile
 from .config import qconfig, Theme, isDarkTheme, QT_VERSION
 
 
@@ -263,38 +265,10 @@ class DirtyStyleSheetWatcher(QObject):
         return super().eventFilter(obj, e)
 
 
-class StyleSheetCompose(StyleSheetBase):
-    """ Style sheet compose """
-
-    def __init__(self, sources: List[StyleSheetBase]):
-        super().__init__()
-        self.sources = sources
-
-    def content(self, theme=Theme.AUTO):
-        return '\n'.join([i.content(theme) for i in self.sources])
-
-    def add(self, source: StyleSheetBase):
-        """ add style sheet source """
-        if source is self or source in self.sources:
-            return
-
-        self.sources.append(source)
-
-    def remove(self, source: StyleSheetBase):
-        """ remove style sheet source """
-        if source not in self.sources:
-            return
-
-        self.sources.remove(source)
-
-
-def getStyleSheetFromFile(file: Union[str, QFile]):
-    """ get style sheet from qss file """
-    f = QFile(file)
-    f.open(QFile.ReadOnly)
-    qss = str(f.readAll(), encoding='utf-8')
-    f.close()
-    return qss
+def getStyleSheetFromFile(file: str | QFile) -> str:
+    """从 QSS 文件获取样式表"""
+    with QFluentFile(file, QFile.ReadOnly) as file:
+        return str(file.readAll(), encoding="utf-8")
 
 
 def getStyleSheet(source: Union[str, StyleSheetBase], theme=Theme.AUTO):
