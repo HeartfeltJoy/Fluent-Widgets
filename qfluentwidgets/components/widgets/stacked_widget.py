@@ -1,6 +1,6 @@
 # coding:utf-8
 from enum import Enum
-from typing import List
+from typing import List, Tuple
 
 from PySide6.QtCore import (QAbstractAnimation, QEasingCurve, QPoint, QPropertyAnimation,
                           Signal, QParallelAnimationGroup, Qt, QSequentialAnimationGroup, QRect)
@@ -495,3 +495,87 @@ class DrillInTransitionStackedWidget(TransitionStackedWidget):
         self.nextFadeInAni.setEndValue(1.0)
         self.nextFadeInAni.setEasingCurve(opacityCurve)
         self._aniGroup.addAnimation(self.nextFadeInAni)
+
+
+class FadeEffectAniStackedWidget(QStackedWidget):
+    """Stacked widget with two-phase fade transition."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._aniList: List[Tuple[QPropertyAnimation, QPropertyAnimation]] = []
+        self._aniDuration = 500
+        self._aniEasingCurve = QEasingCurve.Type.OutQuad
+        self._nextIndex = 0
+
+    def getAniDuration(self) -> int:
+        return self._aniDuration
+
+    def setAniDuration(self, duration: int) -> None:
+        self._aniDuration = duration
+        for exitAni, enterAni in self._aniList:
+            exitAni.setDuration(duration)
+            enterAni.setDuration(duration)
+
+    def getAniEasingCurve(self) -> QEasingCurve.Type:
+        return self._aniEasingCurve
+
+    def setAniEasingCurve(self, curve: QEasingCurve.Type) -> None:
+        self._aniEasingCurve = curve
+        for exitAni, enterAni in self._aniList:
+            exitAni.setEasingCurve(curve)
+            enterAni.setEasingCurve(curve)
+
+    def addWidget(self, widget: QWidget) -> int:
+        index = super().addWidget(widget)
+
+        effect = QGraphicsOpacityEffect(widget)
+        effect.setOpacity(1)
+        widget.setGraphicsEffect(effect)
+
+        exitAni = QPropertyAnimation(effect, b"opacity", widget)
+        exitAni.setStartValue(1)
+        exitAni.setEndValue(0)
+        exitAni.setDuration(self._aniDuration)
+        exitAni.setEasingCurve(self._aniEasingCurve)
+        exitAni.finished.connect(self._setCurrentIndex)
+        exitAni.finished.connect(self._actionNextAni)
+
+        enterAni = QPropertyAnimation(effect, b"opacity", widget)
+        enterAni.setStartValue(0)
+        enterAni.setEndValue(1)
+        enterAni.setDuration(self._aniDuration)
+        enterAni.setEasingCurve(self._aniEasingCurve)
+
+        self._aniList.append((exitAni, enterAni))
+        return index
+
+    def removeWidget(self, widget: QWidget) -> None:
+        index = self.indexOf(widget)
+        if index == -1:
+            return
+
+        self._aniList.pop(index)
+        super().removeWidget(widget)
+
+    def _setCurrentIndex(self) -> None:
+        super().setCurrentIndex(self._nextIndex)
+
+    def _actionNextAni(self) -> None:
+        self._aniList[self._nextIndex][1].start()
+
+    def setCurrentIndex(self, index: int) -> None:
+        if index < 0 or index >= self.count():
+            raise Exception(f"The index `{index}` is illegal")
+
+        if index == self.currentIndex():
+            return
+
+        for ani in self._aniList[self.currentIndex()]:
+            if ani.state() == QAbstractAnimation.State.Running:
+                ani.stop()
+
+        self._nextIndex = index
+        self._aniList[self.currentIndex()][0].start()
+
+    def setCurrentWidget(self, widget: QWidget) -> None:
+        self.setCurrentIndex(self.indexOf(widget))
