@@ -206,7 +206,7 @@ class HeaderCardWidget(SimpleCardWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.headerView = QWidget(self)
-        self.headerLabel = QLabel(self)
+        self.headerLabel = BodyLabel(self)
         self.separator = CardSeparator(self)
         self.view = QWidget(self)
 
