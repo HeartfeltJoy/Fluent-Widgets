@@ -9,7 +9,6 @@ from PySide6.QtCore import QFile, QObject, QEvent, QDynamicPropertyChangeEvent
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QWidget, QApplication, QStyleFactory
 
-<<<<<<< HEAD
 from .file import QFluentFile
 from .config import qconfig, Theme, isDarkTheme, QT_VERSION
 
